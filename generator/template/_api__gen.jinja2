@@ -1,0 +1,39 @@
+from abc import ABC, abstractmethod
+from base_server import ServerBaseRouter
+{{imports}}
+
+
+
+
+class ServerInterface(ServerBaseRouter, ABC):
+    def __init__(self):
+        super().__init__()
+
+        {% for operation in operations %}
+        self._{{operation.type}}('{{operation.snake_case_path}}', self.{{operation.function_name}}
+            {% if operation.response != 'None' %}
+            , r={{operation.response}}
+            {% endif %}
+            {% if operation.additional_responses %}
+            , responses={
+                {% for status_code, models in operation.additional_responses.items() %}
+                '{{ status_code }}': {
+                    {% for key, model in models.items() %}
+                    '{{ key }}': {{ model }}{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            }
+            {% endif %}
+        ){% endfor %}
+
+    {% for operation in operations %}
+    @abstractmethod
+    def {{operation.function_name}}(self, {{operation.snake_case_arguments}}) -> {{operation.return_type}}:
+        {%- if operation.summary %}
+        """
+        {{ operation.summary }}
+        """
+        {%- endif %}
+        pass
+    {% endfor %}
